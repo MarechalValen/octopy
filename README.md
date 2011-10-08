@@ -1,6 +1,7 @@
 
 # Initial Setup
 
-`easy_install virtualenv`
-`virtualenv --no-site-packages env`
-`pip install tornado pygments`
+    easy_install virtualenv
+    virtualenv --no-site-packages env
+    source env/bin/activate
+    pip install tornado pygments
