@@ -3,6 +3,14 @@
         <title>{% block title %}SVN List{% end %}</title>
         <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.3.0/bootstrap.min.css">
         <link rel="stylesheet" href="/styles/pygments.css">
+        <script src="/js/jquery-1.6.4.min.js"></script>
+        <script src="/js/jquery.tablesorter.min.js"></script>
+        <script >
+            $(function() {
+                $("table.repo-list").tablesorter({ sortList: [[0,0]] });
+                $("table.repo-dir").tablesorter({ sortList: [[0,0]] });
+            });
+        </script>
     </head>
 
     <body>
