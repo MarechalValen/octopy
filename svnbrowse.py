@@ -48,7 +48,7 @@ def list_repository(repourl, path, rev=None, recursive=False):
         tree = ElementTree()
         tree.parse(tmp)
 
-    for entry in tree.iter('entry'):
+    for entry in getattr(tree, 'iter', getattr(tree, 'getiterator'))('entry'):
         commit = entry.find('commit')
         webpath = "/" + name
         if path != "":
@@ -81,7 +81,7 @@ def list_changesets(repourl, revfrom, revto):
         tree = ElementTree()
         tree.parse(tmp)
 
-    for path in tree.iter('path'):
+    for path in getattr(tree, 'iter', getattr(tree, 'getiterator'))('path'):
         data = { 'props': path.attrib['props'],
             'kind': path.attrib['kind'],
             'item': path.attrib['item'],
