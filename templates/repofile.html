@@ -2,10 +2,13 @@
 
 {% block content %}
 
-    {% if breadcrumbs %}
+    <pre>{{ svnurl }}</pre>
+
+    {% if breadcrumbs or activecrumb %}
         <ul class="breadcrumb">
-        {% for bc in breadcrumbs %}
-            <li><a href="{{ bc }}">{{ bc }}</a> <span class="divider">/</span></li>
+            <li><a href="/">Home</a> <span class="divider">/</span></li>
+        {% for idx, crumb in enumerate(breadcrumbs) %}
+            <li><a href="/{{ "/".join(breadcrumbs[:idx+1]) }}">{{ crumb }}</a> <span class="divider">/</span></li>
         {% end %}
         {% if activecrumb %}
             <li class="active"><a href="{{ activecrumb }}">{{ activecrumb }}</a></li>

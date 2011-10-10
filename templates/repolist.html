@@ -3,7 +3,11 @@
 {% block title %}SVN Repository List{% end %}
 
 {% block content %}
-    <table class="zebra-striped">
+    <ul class="breadcrumb">
+        <li class="active"><a href="/">Home</a></li>
+    </ul>
+
+    <table class="zebra-striped repo-list">
         <thead>
             <tr>
                 <th>Name</th>
@@ -16,8 +20,8 @@
     {% for repo in repos %}
             <tr>
                 <td><a href="{{ repo['weburl'] }}">{{ repo['name'] }}</a></td>
-                <td>{{ repo['last_changed_date'] }}</td>
-                <td>{{ repo['last_changed_author'] }}</td>
+                <td>{{ repo.get('last_changed_date', '') }}</td>
+                <td>{{ repo.get('last_changed_author', '') }}</td>
                 <td>No message yet ...</td>
             </tr>
     {% end %}

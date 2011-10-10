@@ -9,12 +9,13 @@ import tornado.web
 import webbrowser
 from pprint import pprint
 
-SVNDIR = "/usr/local/svn/repositories"
+try:
+    from myrepos import repos
+except ImportError:
+    repos = dict((os.path.basename(i), 'file://%s' % i) for i in glob.glob("/usr/local/svn/repositories/*"))
 
 parser = argparse.ArgumentParser(description="""Starts up a webserver on port 5000
     serving all the local svn repositories""")
-parser.add_argument("-d", type=str, default=SVNDIR, 
-    dest="svndir", help="sets the svn repository directory (defaults to %s)" % SVNDIR)
 
 class OtherHandler(tornado.web.RequestHandler):
     def get(self):
@@ -22,27 +23,37 @@ class OtherHandler(tornado.web.RequestHandler):
 
 class RepoHandler(tornado.web.RequestHandler):
     def get(self, name, path=""):
-        breadcrumbs = [name]
-        parts = path.strip("/").split("/")
-        if len(parts) > 0:
-            breadcrumbs.extend(parts)
-        url = "file:///usr/local/svn/repositories/" + name 
+        parts = [name]
+        parts.extend(path.strip("/").split("/"))
+        parts = filter(lambda s: s.strip(), parts)
+        #pprint(parts, self)
+        url = repos[name]
         files = list(svnbrowse.list_repository(url, path))
         if len(files) == 1 and files[0]['kind'] == 'file':
-            pprint(files, stream=self)
+            #pprint(files, stream=self)
+            if int(files[0]['size']) > 1048576:
+                source = "File too large to display"
+            else:
+                source = svnbrowse.highlight_file(url + "/" + path)
             self.render("templates/repofile.html",
-                file=files[0], source=svnbrowse.highlight_file(url + "/" + path),
-                breadcrumbs=breadcrumbs[:-1], activecrumb=breadcrumbs[-1])
+                file=files[0], source=source,
+                breadcrumbs=parts[:-1], activecrumb=parts[-1],
+                svnurl=url + "/" + path)
         else:
+            #pprint(files, stream=self)
+            readmes = [s for s in files if 'readme' in s['name'].lower()]
+            readme = ""
+            if len(readmes) > 0:
+                readme = svnbrowse.highlight_file(url + "/" + path + "/" + readmes[0]['name'])
             self.render("templates/repodir.html",
                 repo={"name": name}, files=files,
-                breadcrumbs=breadcrumbs[:-1], activecrumb=breadcrumbs[-1])
+                breadcrumbs=parts[:-1], activecrumb=parts[-1],
+                svnurl=url + "/" + path, readme=readme)
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        repos = ('file://%s' % i for i in glob.glob(SVNDIR + '/*'))
         self.render("templates/repolist.html", 
-            repos=svnbrowse.list_repositories(repos))
+            repos=svnbrowse.list_repositories(sorted(repos.values())))
 
 settings = {
     "static_path": os.path.join(os.path.dirname(__file__), "static"),
@@ -53,15 +64,14 @@ application = tornado.web.Application([
     (r"/favicon.ico", OtherHandler),
     (r"/styles/(pygments.css)", tornado.web.StaticFileHandler,
         dict(path=settings['static_path'])),
+    (r"/js/(.*)", tornado.web.StaticFileHandler,
+        dict(path=settings['static_path'])),
     (r"/([^/]*)/?(.*)", RepoHandler),
 ])
 
 if __name__ == "__main__":
 
     args = parser.parse_args()
-
-    # TODO verify svndir
-
     application.listen(5000)
-    webbrowser.open("http://localhost:5000")
+    #webbrowser.open("http://localhost:5000")
     tornado.ioloop.IOLoop.instance().start()
