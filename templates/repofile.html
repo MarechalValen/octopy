@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+    {% if breadcrumbs %}
+        <ul class="breadcrumb">
+        {% for bc in breadcrumbs %}
+            <li><a href="{{ bc }}">{{ bc }}</a> <span class="divider">/</span></li>
+        {% end %}
+        {% if activecrumb %}
+            <li class="active"><a href="{{ activecrumb }}">{{ activecrumb }}</a></li>
+        {% end %}
+        </ul>
+    {% end %}
+
+{% raw source %}
+{% end %}

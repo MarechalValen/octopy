@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}SVN Repository List{% end %}
+
+{% block content %}
+    <table class="zebra-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last Changed At</th>
+                <th>Last Changed By</th>
+                <th>Last Change Message</th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for repo in repos %}
+            <tr>
+                <td><a href="{{ repo['weburl'] }}">{{ repo['name'] }}</a></td>
+                <td>{{ repo['last_changed_date'] }}</td>
+                <td>{{ repo['last_changed_author'] }}</td>
+                <td>No message yet ...</td>
+            </tr>
+    {% end %}
+        </tbody>
+    </table>
+{% end %}

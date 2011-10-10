@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}SVN Repository &gt; {{ repo['name'] }}{% end %}:
+
+{% block content %}
+
+    {% if breadcrumbs %}
+        <ul class="breadcrumb">
+        {% for bc in breadcrumbs %}
+            <li><a href="{{ bc }}">{{ bc }}</a> <span class="divider">/</span></li>
+        {% end %}
+        {% if activecrumb %}
+            <li class="active"><a href="{{ activecrumb }}">{{ activecrumb }}</a></li>
+        {% end %}
+        </ul>
+    {% end %}
+
+    <table class="zebra-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last Changed At</th>
+                <th>Last Changed By</th>
+                <th>Last Change Message</th>
+            </tr>
+        </thead>
+        <tbody>
+    {% for file in files %}
+            <tr>
+                <td><a href="{{ file['webpath'] }}">{{ file['name'] }}</a></td>
+                <td>{{ file['date'] }}</td>
+                <td>{{ file['author'] }}</td>
+                <td>No message yet ...</td>
+            </tr>
+    {% end %}
+        </tbody>
+    </table>
+{% end %}
