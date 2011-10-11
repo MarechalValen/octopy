@@ -6,7 +6,7 @@ import svnbrowse
 import glob
 import tornado.ioloop
 import tornado.web
-import webbrowser
+import memcache
 from pprint import pprint
 
 try:
@@ -52,8 +52,12 @@ class RepoHandler(tornado.web.RequestHandler):
 
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
-        self.render("templates/repolist.html", 
-            repos=svnbrowse.list_repositories(sorted(repos.values())))
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        repos_list = mc.get('repo_list')
+        if not repos_list:
+            repos_list = list(svnbrowse.list_repositories(sorted(repos.values())))
+            mc.set('repo_list', repos_list, time=3600)
+        self.render("templates/repolist.html", repos=repos_list)
 
 settings = {
     "static_path": os.path.join(os.path.dirname(__file__), "static"),
@@ -73,5 +77,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     application.listen(5000)
-    #webbrowser.open("http://localhost:5000")
     tornado.ioloop.IOLoop.instance().start()
