@@ -57,7 +57,7 @@ def list_repository(repourl, path, rev=None, recursive=False):
         data = { 'kind': entry.attrib['kind'],
             'name': entry.find('name').text,
             'revision': commit.attrib['revision'],
-            'author': commit.find('author').text,
+            'author': getattr(commit.find('author'), 'text', ''),
             'date': commit.find('date').text,
             'webpath': webpath}
         try:
