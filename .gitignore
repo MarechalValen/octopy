@@ -1,3 +1,4 @@
 env/*
 *.pyc
 myrepos.py*
+settings.py

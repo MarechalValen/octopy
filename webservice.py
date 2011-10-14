@@ -2,15 +2,18 @@
 
 import argparse
 import os
-import svnbrowse
 import glob
+from pprint import pprint
+
+import auth
+import svnbrowse
 import tornado.ioloop
 import tornado.web
 import memcache
-from pprint import pprint
 
 try:
-    from myrepos import repos
+    import settings
+    repos = settings.repositories
 except ImportError:
     repos = dict((os.path.basename(i), 'file://%s' % i) for i in glob.glob("/usr/local/svn/repositories/*"))
 
@@ -21,6 +24,7 @@ class OtherHandler(tornado.web.RequestHandler):
     def get(self):
         self.write("")
 
+@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class RepoHandler(tornado.web.RequestHandler):
     def get(self, name, path=""):
         parts = [name]
@@ -50,6 +54,7 @@ class RepoHandler(tornado.web.RequestHandler):
                 breadcrumbs=parts[:-1], activecrumb=parts[-1],
                 svnurl=url + "/" + path, readme=readme)
 
+@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         mc = memcache.Client(['127.0.0.1:11211'], debug=0)
