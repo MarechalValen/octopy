@@ -68,6 +68,8 @@ application = tornado.web.Application([
     (r"/favicon.ico", OtherHandler),
     (r"/styles/(pygments.css)", tornado.web.StaticFileHandler,
         dict(path=settings['static_path'])),
+    (r"/styles/bootstrap/(.*css)", tornado.web.StaticFileHandler,
+        dict(path=settings['static_path'] + '/twitter-bootstrap-1.3.0')),
     (r"/js/(.*)", tornado.web.StaticFileHandler,
         dict(path=settings['static_path'])),
     (r"/([^/]*)/?(.*)", RepoHandler),
