@@ -7,6 +7,7 @@ from pprint import pprint
 
 import auth
 import svnbrowse
+import svnmanage
 import tornado.ioloop
 import tornado.web
 import memcache
@@ -25,6 +26,14 @@ class OtherHandler(tornado.web.RequestHandler):
         self.write("")
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
+class CreateBranchHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("creating a new branch...")
+        
+class CreateTagHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.write("creating a new tag...")
+
 class RepoHandler(tornado.web.RequestHandler):
     def get(self, name, path=""):
         parts = [name]
@@ -70,6 +79,8 @@ settings = {
 
 application = tornado.web.Application([
     (r"/", MainHandler),
+    (r"/newtag", CreateTagHandler),
+    (r"/newbranch", CreateBranchHandler),
     (r"/favicon.ico", OtherHandler),
     (r"/styles/(pygments.css)", tornado.web.StaticFileHandler,
         dict(path=settings['static_path'])),
@@ -79,6 +90,10 @@ application = tornado.web.Application([
         dict(path=settings['static_path'])),
     (r"/([^/]*)/?(.*)", RepoHandler),
 ])
+], debug=True)
+
+# with the `debug=True` flag we get autoreloading - whenever a module is changed
+# while the webserver is running, the whole thing is reloaded
 
 if __name__ == "__main__":
 
