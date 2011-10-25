@@ -27,12 +27,43 @@ class OtherHandler(tornado.web.RequestHandler):
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class CreateBranchHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write("creating a new branch...")
+    def get(self, reponame):
+        self.write("creating a new branch for %s ..." % reponame)
         
 class CreateTagHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write("creating a new tag...")
+    def get(self, reponame):
+        url = repos[reponame]
+        self._render_page(reponame, [], svnbrowse.get_tags(url))
+       
+    def post(self, reponame):
+        url = repos[reponame]
+        errors = []
+        tagname = self.get_argument('tagname')
+        tags = svnbrowse.get_tags(url)
+        try:
+            svnmanage.create_tag(url, tagname, 'pmanser')
+            self.redirect("/%s/tags" % reponame)
+        except svnmanage.Error, e:
+            errors.append(str(e))
+
+        self._render_page(reponame, errors, tags)
+
+    def _render_page(self, reponame, errors, tags):
+        tags = list(reversed(sorted(tags)))
+        try:
+            latest_tag = tags[0]
+        except IndexError:
+            latest_tag = None
+
+        try:
+            tags = tags[1:]
+        except IndexError:
+            tags = []
+
+        self.render("templates/newtag.html", errors=errors,
+            latest_tag=latest_tag, tags=tags,
+            breadcrumbs=[], activecrumb='newtag %s' % reponame)
+ 
 
 class RepoHandler(tornado.web.RequestHandler):
     def get(self, name, path=""):
@@ -79,8 +110,8 @@ settings = {
 
 application = tornado.web.Application([
     (r"/", MainHandler),
-    (r"/newtag", CreateTagHandler),
-    (r"/newbranch", CreateBranchHandler),
+    (r"/newtag/(.*)", CreateTagHandler),
+    (r"/newbranch/(.*)", CreateBranchHandler),
     (r"/favicon.ico", OtherHandler),
     (r"/styles/(pygments.css)", tornado.web.StaticFileHandler,
         dict(path=settings['static_path'])),
@@ -89,7 +120,6 @@ application = tornado.web.Application([
     (r"/js/(.*)", tornado.web.StaticFileHandler,
         dict(path=settings['static_path'])),
     (r"/([^/]*)/?(.*)", RepoHandler),
-])
 ], debug=True)
 
 # with the `debug=True` flag we get autoreloading - whenever a module is changed

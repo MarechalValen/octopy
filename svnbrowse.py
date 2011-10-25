@@ -1,6 +1,6 @@
 
 from os.path import basename, dirname
-from subprocess import call, check_call
+from subprocess import call, check_call, CalledProcessError
 from tempfile import TemporaryFile
 from xml.etree.ElementTree import ElementTree
 
@@ -8,6 +8,10 @@ from pygments import highlight
 from pygments.lexers import guess_lexer, get_lexer_for_filename, TextLexer
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
+
+
+class NoTagDirectoryInRepo(Exception):
+    pass
 
 def list_repositories(repos):
     """Returns a list of all the available repositories as a label and path
@@ -103,3 +107,14 @@ def highlight_file(repourl):
             return highlight(tmp.read(), 
                 TextLexer(), HtmlFormatter()) 
     
+
+def get_tags(repourl):
+    cmd = ['svn', 'list', '%s/tags' % repourl]
+    try:
+        with TemporaryFile() as tmp:
+            check_call(cmd, stdout=tmp)
+            tmp.seek(0)
+            return [i.strip().strip("/") for i in tmp.readlines()]
+    except CalledProcessError:
+        raise NoTagDirectoryInRepo("The repository %s does not have a 'tags' directory" % repourl)
+

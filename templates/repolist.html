@@ -14,6 +14,7 @@
                 <th>Last Changed At</th>
                 <th>Last Changed By</th>
                 <th>Last Change Message</th>
+                <th>&nbsp;</th>
             </tr>
         </thead>
         <tbody>
@@ -23,6 +24,9 @@
                 <td>{{ repo.get('last_changed_date', '') }}</td>
                 <td>{{ repo.get('last_changed_author', '') }}</td>
                 <td>No message yet ...</td>
+                <td><a class="btn" href="/newbranch/{{ repo['name'] }}">Branch</a> 
+                    <a class="btn" href="/newtag/{{ repo['name'] }}">Tag</a></td>
+
             </tr>
     {% end %}
         </tbody>
