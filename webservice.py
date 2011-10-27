@@ -26,10 +26,25 @@ class OtherHandler(tornado.web.RequestHandler):
         self.write("")
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
+class CreateRepoHandler(tornado.web.RequestHandler):
+    def get(self, errors=None):
+        errors = errors or []
+        self.render("templates/newrepo.html", errors=errors,
+            breadcrumbs=[], activecrumb='newrepo')
+    def post(self):
+        reponame = self.get_argument('reponame')
+        try:
+            svnmanage.create_repo(reponame, 'root')
+            self.redirect("/%s" % reponame)
+        except Exception, e:
+            self.get([str(e)])
+
+@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class CreateBranchHandler(tornado.web.RequestHandler):
     def get(self, reponame):
         self.write("creating a new branch for %s ..." % reponame)
         
+@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class CreateTagHandler(tornado.web.RequestHandler):
     def get(self, reponame):
         url = repos[reponame]
@@ -65,6 +80,7 @@ class CreateTagHandler(tornado.web.RequestHandler):
             breadcrumbs=[], activecrumb='newtag %s' % reponame)
  
 
+@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class RepoHandler(tornado.web.RequestHandler):
     def get(self, name, path=""):
         parts = [name]
@@ -112,6 +128,7 @@ application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/newtag/(.*)", CreateTagHandler),
     (r"/newbranch/(.*)", CreateBranchHandler),
+    (r"/newrepo", CreateRepoHandler),
     (r"/favicon.ico", OtherHandler),
     (r"/styles/(pygments.css)", tornado.web.StaticFileHandler,
         dict(path=settings['static_path'])),

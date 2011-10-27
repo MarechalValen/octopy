@@ -1,4 +1,5 @@
 
+from datetime import datetime
 from os.path import basename, dirname
 from subprocess import call, check_call, CalledProcessError
 from tempfile import TemporaryFile
@@ -33,6 +34,9 @@ def list_repositories(repos):
 
         repo['name'] = basename(repo['url'])
         repo['weburl'] = repo['name'] + '/' + repo['url'].replace(repo['repository_root'], '')
+        repo['orig_last_changed_date'] = repo['last_changed_date']
+        repo['last_changed_date'] = datetime.strptime(
+            repo['last_changed_date'][:19], "%Y-%m-%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
         yield repo
 
 def list_repository(repourl, path, rev=None, recursive=False):
@@ -62,7 +66,9 @@ def list_repository(repourl, path, rev=None, recursive=False):
             'name': entry.find('name').text,
             'revision': commit.attrib['revision'],
             'author': getattr(commit.find('author'), 'text', ''),
-            'date': commit.find('date').text,
+            'date': datetime.strptime(commit.find('date').text[:19], 
+                "%Y-%m-%dT%H:%M:%S").strftime("%m/%d/%Y %H:%M:%S"),
+            'orig_date': commit.find('date').text,
             'webpath': webpath}
         try:
             data['size'] = entry.find('size').text

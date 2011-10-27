@@ -1,6 +1,7 @@
 import re
 import svnbrowse
 from subprocess import call, check_call, CalledProcessError
+from tempfile import TemporaryFile
 
 class Error(Exception):
     pass
@@ -10,6 +11,15 @@ class TagExists(Error):
 
 class BadName(Error):
     pass
+
+def create_repo(name, username):
+    with TemporaryFile() as tmp:
+        #check_call(['createrepo', '-u', username, name])
+        out = call(['createrepo', name], stderr=tmp)
+        if out is not 0:
+            tmp.seek(0)
+            raise Error(tmp.read())
+        return True
 
 def create_branch(repourl, branchname, username):
     pass
