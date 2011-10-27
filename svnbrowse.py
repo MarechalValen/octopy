@@ -14,6 +14,31 @@ from pygments.util import ClassNotFound
 class NoTagDirectoryInRepo(Exception):
     pass
 
+class LogParser(object):
+    def __init__(self, logoutput):
+        self.log = logoutput
+    def __iter__(self):
+        tree = ElementTree()
+        tree.parse(self.log)
+        iterator = getattr(tree, 'iter', getattr(tree, 'getiterator'))
+        for entry in iterator('logentry'):
+            data = {}
+            data['revision'] = entry.attrib['revision']
+            try:
+                data['author'] = entry.find('author').text
+            except AttributeError:
+                data['author'] = ''
+            data['date'] = entry.find('date').text
+            data['orig_date'] = entry.find('date').text
+            data['message'] = entry.find('msg').text
+            data['paths'] = []
+            for path in entry.find('paths').findall('path'):
+                data['paths'].append({'path': path.text,
+                    'kind': path.attrib['kind'],
+                    'action': path.attrib['action']})
+            yield data
+
+
 def list_repositories(repos):
     """Returns a list of all the available repositories as a label and path
     expects repos to be an iterable of svn urls 
@@ -77,6 +102,14 @@ def list_repository(repourl, path, rev=None, recursive=False):
 
         yield data
 
+def list_history(repourl):
+    """returns the parsed history of the repository"""
+    cmd = ['svn', 'log', '--xml', '-v', repourl]
+    with TemporaryFile() as tmp:
+        check_call(cmd, stdout=tmp)
+        tmp.seek(0)
+        parser = LogParser(tmp)
+        return list(parser) 
 
 def list_changesets(repourl, revfrom, revto):
     """Returns the parsed changeset"""
