@@ -140,11 +140,11 @@ def highlight_file(repourl):
         try:
             return highlight(tmp.read(), 
                 get_lexer_for_filename(basename(repourl)),
-                HtmlFormatter()) 
+                HtmlFormatter(linenos=True)) 
         except ClassNotFound, e:
             tmp.seek(0)
             return highlight(tmp.read(), 
-                TextLexer(), HtmlFormatter()) 
+                TextLexer(), HtmlFormatter(linenos=True)) 
     
 
 def get_tags(repourl):
