@@ -6,6 +6,15 @@
 
 <form method="post">
 
+    {% if messages %}
+        {% for msg in messages %}
+        <div class="alert-message success">
+            <p>{{ msg }}</p>
+        </div>
+        {% end %}
+    {% end %}
+
+
     {% if errors %}
         {% for error in errors %}
         <div class="alert-message error">

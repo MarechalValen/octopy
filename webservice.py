@@ -14,9 +14,9 @@ import memcache
 
 try:
     import settings
-    repos = settings.repositories
 except ImportError:
-    repos = dict((os.path.basename(i), 'file://%s' % i) for i in glob.glob("/usr/local/svn/repositories/*"))
+    settings = object()
+    settings.repositories = dict((os.path.basename(i), 'file://%s' % i) for i in glob.glob("/usr/local/svn/repositories/*"))
 
 parser = argparse.ArgumentParser(description="""Starts up a webserver on port 5000
     serving all the local svn repositories""")
@@ -28,12 +28,12 @@ class OtherHandler(tornado.web.RequestHandler):
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class RepoHistoryHandler(tornado.web.RequestHandler):
     def get(self, reponame):
-        url = repos[reponame]
+        url = settings.repositories[reponame]
         mc = memcache.Client(['127.0.0.1:11211'], debug=0)
         logs = mc.get('%s_history' % reponame.encode('ISO-8859-1'))
         if not logs:
             logs = svnbrowse.list_history(url)
-            mc.set('%s_history' % reponame.encode('ISO-8859-1'), logs, time=3600)
+            mc.set('%s_history' % reponame.encode('ISO-8859-1'), logs, time=300)
         self.render("templates/repohist.html", logs=logs,
             breadcrumbs=[reponame], activecrumb='log', svnurl=url)
 
@@ -42,11 +42,18 @@ class CreateRepoHandler(tornado.web.RequestHandler):
     def get(self, errors=None):
         errors = errors or []
         self.render("templates/newrepo.html", errors=errors,
-            breadcrumbs=[], activecrumb='newrepo')
+            breadcrumbs=[], activecrumb='newrepo', messages=[])
     def post(self):
         reponame = self.get_argument('reponame')
         try:
-            svnmanage.create_repo(reponame, 'root')
+            svnmanage.create_repo(reponame, 'www-data')
+            mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+
+            reload(settings)
+            mc.set('repo_list_%s' % reponame,
+                svnbrowse.get_root_info(settings.repositories[reponame]), 
+                time=3600)
+
             self.redirect("/%s" % reponame)
         except Exception, e:
             self.get([str(e)])
@@ -102,7 +109,7 @@ class RepoHandler(tornado.web.RequestHandler):
         parts.extend(path.strip("/").split("/"))
         parts = filter(lambda s: s.strip(), parts)
         #pprint(parts, self)
-        url = repos[name]
+        url = settings.repositories[name]
         files = list(svnbrowse.list_repository(url, path))
         if len(files) == 1 and files[0]['kind'] == 'file':
             #pprint(files, stream=self)
@@ -129,13 +136,17 @@ class RepoHandler(tornado.web.RequestHandler):
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         mc = memcache.Client(['127.0.0.1:11211'], debug=0)
-        repos_list = mc.get('repo_list')
-        if not repos_list:
-            repos_list = list(svnbrowse.list_repositories(sorted(repos.values())))
-            mc.set('repo_list', repos_list, time=3600)
-        self.render("templates/repolist.html", repos=repos_list)
+        names = settings.repositories.keys()
+        repos_list = mc.get_multi(names, 'repo_list_')
+        missing = set(names) - set(repos_list.keys())
+        if len(missing) > 0:
+            reload(settings)
+            for name in missing:
+                url = settings.repositories[name]
+                mc.set('repo_list_%s' % name, svnbrowse.get_root_info(url), time=3600)
+        self.render("templates/repolist.html", repos=repos_list.values())
 
-settings = {
+appsettings = {
     "static_path": os.path.join(os.path.dirname(__file__), "static"),
 }
 
@@ -146,11 +157,11 @@ application = tornado.web.Application([
     (r"/newrepo", CreateRepoHandler),
     (r"/favicon.ico", OtherHandler),
     (r"/styles/(pygments.css)", tornado.web.StaticFileHandler,
-        dict(path=settings['static_path'])),
+        dict(path=appsettings['static_path'])),
     (r"/styles/bootstrap/(.*css)", tornado.web.StaticFileHandler,
-        dict(path=settings['static_path'] + '/twitter-bootstrap-1.3.0')),
+        dict(path=appsettings['static_path'] + '/twitter-bootstrap-1.3.0')),
     (r"/js/(.*)", tornado.web.StaticFileHandler,
-        dict(path=settings['static_path'])),
+        dict(path=appsettings['static_path'])),
     (r"/history/([^/]*)/?", RepoHistoryHandler),
     (r"/([^/]*)/?(.*)", RepoHandler),
 ], debug=True)

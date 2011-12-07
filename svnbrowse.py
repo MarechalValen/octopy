@@ -28,7 +28,8 @@ class LogParser(object):
                 data['author'] = entry.find('author').text
             except AttributeError:
                 data['author'] = ''
-            data['date'] = entry.find('date').text
+            data['date'] = datetime.strptime(entry.find('date').text[0:19], 
+                "%Y-%m-%dT%H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
             data['orig_date'] = entry.find('date').text
             data['message'] = entry.find('msg').text
             data['paths'] = []
@@ -44,25 +45,31 @@ def list_repositories(repos):
     expects repos to be an iterable of svn urls 
     """
     for repourl in repos:
-        repo = {}
-        with TemporaryFile() as tmp:
-            call(['svn', 'info', repourl], stdout=tmp)
+        yield get_root_info(repo)
 
-            tmp.seek(0)
-            for line in tmp:
-                line = line.strip()
-                if not line: 
-                    continue
-                key = line.split(':')[0].replace(' ', '_').lower()
-                value = ':'.join(line.split(':')[1:]).strip()
-                repo[key] = value
+def get_root_info(repourl):
+    """Returns a list of all the available repositories as a label and path
+    expects repos to be an iterable of svn urls 
+    """
+    repo = {}
+    with TemporaryFile() as tmp:
+        call(['svn', 'info', repourl], stdout=tmp)
 
-        repo['name'] = basename(repo['url'])
-        repo['weburl'] = repo['name'] + '/' + repo['url'].replace(repo['repository_root'], '')
-        repo['orig_last_changed_date'] = repo['last_changed_date']
-        repo['last_changed_date'] = datetime.strptime(
-            repo['last_changed_date'][:19], "%Y-%m-%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
-        yield repo
+        tmp.seek(0)
+        for line in tmp:
+            line = line.strip()
+            if not line: 
+                continue
+            key = line.split(':')[0].replace(' ', '_').lower()
+            value = ':'.join(line.split(':')[1:]).strip()
+            repo[key] = value
+
+    repo['name'] = basename(repo['url'])
+    repo['weburl'] = repo['name'] + '/' + repo['url'].replace(repo['repository_root'], '')
+    repo['orig_last_changed_date'] = repo['last_changed_date']
+    repo['last_changed_date'] = datetime.strptime(
+        repo['last_changed_date'][:19], "%Y-%m-%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
+    return repo
 
 def list_repository(repourl, path, rev=None, recursive=False):
     """Returns a listing of the repository, every folder and file"""

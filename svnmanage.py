@@ -1,3 +1,4 @@
+import logging
 import re
 import svnbrowse
 from subprocess import call, check_call, CalledProcessError
@@ -18,7 +19,9 @@ def create_repo(name, username):
         out = call(['createrepo', name], stderr=tmp)
         if out is not 0:
             tmp.seek(0)
-            raise Error(tmp.read())
+            msg = tmp.read()
+            logging.error(msg)
+            raise Error(msg)
         return True
 
 def create_branch(repourl, branchname, username):
