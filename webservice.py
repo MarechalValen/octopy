@@ -12,6 +12,11 @@ import tornado.ioloop
 import tornado.web
 import memcache
 
+#def _temp_auth(*args, **kwargs):
+#    return True
+#
+#auth.ldapauth.auth_user_ldap = _temp_auth
+
 try:
     import settings
 except ImportError:
