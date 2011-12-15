@@ -15,6 +15,20 @@
 
     <body>
         <div class="container-fluid">
+        <div class="topbar-wrapper" style="z-index: 5;">
+			<div class="topbar" data-dropdown="dropdown">
+			  <div class="topbar-inner">
+				<div class="container">
+				  {% block toolbar %}{% end %}
+				</div>
+			  </div><!-- /topbar-inner -->
+			</div><!-- /topbar -->
+		  </div>
+		  <br />
+		  <br />
+		  <br />
+		  
+        
             <div class="sidebar">
                 {% block sidebar %}{% end %}
             </div>

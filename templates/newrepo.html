@@ -1,5 +1,12 @@
 {% extends "base.html" %}
 
+{% block toolbar %}
+<h3><a href="/">NabSvn</a></h3>
+<ul class="nav">
+<li class="active"><a href="/newrepo">Create Repo</a></li>
+</ul>
+{% end %}
+
 {% block content %}
 
     {% include "breadcrumbs.html" %}

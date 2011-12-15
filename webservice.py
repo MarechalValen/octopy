@@ -2,7 +2,6 @@
 
 import argparse
 import os
-import glob
 from pprint import pprint
 
 import auth
@@ -12,16 +11,10 @@ import tornado.ioloop
 import tornado.web
 import memcache
 
-#def _temp_auth(*args, **kwargs):
-#    return True
-#
-#auth.ldapauth.auth_user_ldap = _temp_auth
+def _temp_auth(*a, **kw): return True
+auth.ldapauth.auth_user_ldap = _temp_auth
 
-try:
-    import settings
-except ImportError:
-    settings = object()
-    settings.repositories = dict((os.path.basename(i), 'file://%s' % i) for i in glob.glob("/usr/local/svn/repositories/*"))
+import settings
 
 parser = argparse.ArgumentParser(description="""Starts up a webserver on port 5000
     serving all the local svn repositories""")
@@ -39,7 +32,7 @@ class RepoHistoryHandler(tornado.web.RequestHandler):
         if not logs:
             logs = svnbrowse.list_history(url)
             mc.set('%s_history' % reponame.encode('ISO-8859-1'), logs, time=300)
-        self.render("templates/repohist.html", logs=logs,
+        self.render("templates/repohist.html", logs=logs, repo={"name": reponame},
             breadcrumbs=[reponame], activecrumb='log', svnurl=url)
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
@@ -123,7 +116,7 @@ class RepoHandler(tornado.web.RequestHandler):
             else:
                 source = svnbrowse.highlight_file(url + "/" + path)
             self.render("templates/repofile.html",
-                file=files[0], source=source,
+                file=files[0], source=source, repo={"name": name},
                 breadcrumbs=parts[:-1], activecrumb=parts[-1],
                 svnurl=url + "/" + path)
         else:
@@ -151,12 +144,18 @@ class MainHandler(tornado.web.RequestHandler):
                 mc.set('repo_list_%s' % name, svnbrowse.get_root_info(url), time=3600)
         self.render("templates/repolist.html", repos=repos_list.values())
 
+@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
+class DumpSettingsHandler(tornado.web.RequestHandler):
+    def get(self):
+        pprint(settings.repositories, self)
+
 appsettings = {
     "static_path": os.path.join(os.path.dirname(__file__), "static"),
 }
 
 application = tornado.web.Application([
     (r"/", MainHandler),
+    (r"/dump-settings", DumpSettingsHandler),
     (r"/newtag/(.*)", CreateTagHandler),
     (r"/newbranch/(.*)", CreateBranchHandler),
     (r"/newrepo", CreateRepoHandler),

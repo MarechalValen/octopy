@@ -2,14 +2,18 @@
 
 {% block title %}SVN Repository List{% end %}
 
+{% block toolbar %}
+<h3><a href="/">NabSvn</a></h3>
+<ul class="nav">
+<li><a href="/newrepo">Create Repo</a></li>
+</ul>
+{% end %}
+
 {% block content %}
     <ul class="breadcrumb">
         <li class="active"><a href="/">Home</a></li>
     </ul>
 
-    <div>
-        <a class="btn" href="/newrepo">Create Repo</a>
-    </div>
     <p><span class="label notice">Cached Results</span>The results on this page are cached for 1 hour, so don't panic if you don't see your latest commit right away.</p>
     <table class="zebra-striped repo-list">
         <thead>
@@ -24,7 +28,7 @@
         <tbody>
     {% for repo in repos %}
             <tr>
-                <td><a href="{{ repo['weburl'] }}">{{ repo['name'] }}</a></td>
+                <td><a href="{{ repo['weburl'] }}trunk">{{ repo['name'] }}</a></td>
                 <td>{% raw repo.get('last_changed_date', '').replace(' ', '&nbsp;') %}</td>
                 <td>{{ repo.get('last_changed_author', '') }}</td>
                 <td>No message yet ...</td>

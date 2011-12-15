@@ -2,13 +2,21 @@
 
 {% block title %}SVN Repository &gt; {{ repo['name'] }}{% end %}:
 
+{% block toolbar %}
+<h3><a href="/{{ repo['name'] }}">{{ repo['name'] }}</a></h3>
+<ul class="nav">
+<li><a href="/{{ repo['name'] }}/trunk">Trunk</a></li>
+<li><a href="/{{ repo['name'] }}/branches">Branches</a></li>
+<li><a href="/{{ repo['name'] }}/tags">Tags</a></li>
+<li><a href="/history/{{ repo['name'] }}">History</a></li>
+</ul>
+{% end %}
+
 {% block content %}
 
     <pre>{{ svnurl }}</pre>
 
     {% include "breadcrumbs.html" %}
-
-    <a class="btn" href="/history/{{ repo['name'] }}">History</a><br />
 
     <table class="zebra-striped repo-dir">
         <thead>
