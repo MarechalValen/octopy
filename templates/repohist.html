@@ -6,6 +6,8 @@
 
     {% include "breadcrumbs.html" %}
 
+    <p><span class="label notice">Cached Results</span>The results on this page are cached for 5 minutes, so don't panic if you don't see your latest commit right away.</p>
+
 <table class="zebra-striped">
     <thead>
         <tr>
@@ -20,7 +22,7 @@
         <tr>
             <td>{{ log['revision'] }}</td>
             <td>{{ log['author'] }}</td>
-            <td>{{ log['date'] }}</td>
+            <td>{% raw log['date'].replace(' ', '&nbsp;') %}</td>
             <td>{{ log['message'] }}</td>
         </tr>
         <tr>
@@ -30,6 +32,8 @@
             {% end %}
             </td>
         </tr>
+        <tr style="display: none"> <td colspan="4"> </td> </tr>
+        <tr style="background: #DDD"> <td colspan="4"> </td> </tr>
     {% end %}
     </tbody>
 </table>

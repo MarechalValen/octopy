@@ -10,6 +10,7 @@
     <div>
         <a class="btn" href="/newrepo">Create Repo</a>
     </div>
+    <p><span class="label notice">Cached Results</span>The results on this page are cached for 1 hour, so don't panic if you don't see your latest commit right away.</p>
     <table class="zebra-striped repo-list">
         <thead>
             <tr>
@@ -24,7 +25,7 @@
     {% for repo in repos %}
             <tr>
                 <td><a href="{{ repo['weburl'] }}">{{ repo['name'] }}</a></td>
-                <td>{{ repo.get('last_changed_date', '') }}</td>
+                <td>{% raw repo.get('last_changed_date', '').replace(' ', '&nbsp;') %}</td>
                 <td>{{ repo.get('last_changed_author', '') }}</td>
                 <td>No message yet ...</td>
                 <td>

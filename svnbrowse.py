@@ -10,6 +10,7 @@ from pygments.lexers import guess_lexer, get_lexer_for_filename, TextLexer
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
 
+DEFAULT_DATE_FMT = "%x %I:%M:%S %p"
 
 class NoTagDirectoryInRepo(Exception):
     pass
@@ -29,7 +30,7 @@ class LogParser(object):
             except AttributeError:
                 data['author'] = ''
             data['date'] = datetime.strptime(entry.find('date').text[0:19], 
-                "%Y-%m-%dT%H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
+                "%Y-%m-%dT%H:%M:%S").strftime(DEFAULT_DATE_FMT)
             data['orig_date'] = entry.find('date').text
             data['message'] = entry.find('msg').text
             data['paths'] = []
@@ -68,7 +69,7 @@ def get_root_info(repourl):
     repo['weburl'] = repo['name'] + '/' + repo['url'].replace(repo['repository_root'], '')
     repo['orig_last_changed_date'] = repo['last_changed_date']
     repo['last_changed_date'] = datetime.strptime(
-        repo['last_changed_date'][:19], "%Y-%m-%d %H:%M:%S").strftime("%m/%d/%Y %H:%M:%S")
+        repo['last_changed_date'][:19], "%Y-%m-%d %H:%M:%S").strftime(DEFAULT_DATE_FMT)
     return repo
 
 def list_repository(repourl, path, rev=None, recursive=False):
@@ -99,7 +100,7 @@ def list_repository(repourl, path, rev=None, recursive=False):
             'revision': commit.attrib['revision'],
             'author': getattr(commit.find('author'), 'text', ''),
             'date': datetime.strptime(commit.find('date').text[:19], 
-                "%Y-%m-%dT%H:%M:%S").strftime("%m/%d/%Y %H:%M:%S"),
+                "%Y-%m-%dT%H:%M:%S").strftime(DEFAULT_DATE_FMT),
             'orig_date': commit.find('date').text,
             'webpath': webpath}
         try:

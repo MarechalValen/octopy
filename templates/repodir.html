@@ -23,7 +23,7 @@
     {% for file in files %}
             <tr>
                 <td><a href="{{ file['webpath'] }}">{{ file['name'] }}{% if file.get('kind') == 'dir' %}/{% end %}</a></td>
-                <td>{{ file['date'] }}</td>
+                <td>{% raw file['date'].replace(' ', '&nbsp;') %}</td>
                 <td>{{ file['author'] }}</td>
                 <td>No message yet ...</td>
             </tr>
