@@ -104,6 +104,12 @@ def get_root_info(repourl):
     repo['orig_last_changed_date'] = repo['last_changed_date']
     repo['last_changed_date'] = datetime.strptime(
         repo['last_changed_date'][:19], "%Y-%m-%d %H:%M:%S").strftime(DEFAULT_DATE_FMT)
+    
+    try:
+        repo['most_recent_change'] = list_history(repo['url'], repo['last_changed_rev'])[0]
+    except IndexError:
+        repo['most_recent_change'] = {}
+
     return repo
 
 def list_repository(repourl, path, rev=None, recursive=False):
@@ -163,9 +169,11 @@ def list_repository2(repourl, path, rev=None, recursive=False):
         parser = ListParser(tmp)
         return list(parser)
 
-def list_history(repourl):
+def list_history(repourl, revision=None):
     """returns the parsed history of the repository"""
     cmd = ['svn', 'log', '--xml', '-v', repourl]
+    if revision is not None:
+        cmd.extend(['-r', revision])
     with TemporaryFile() as tmp:
         check_call(cmd, stdout=tmp)
         tmp.seek(0)

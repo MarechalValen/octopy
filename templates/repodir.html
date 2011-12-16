@@ -29,11 +29,12 @@
         </thead>
         <tbody>
     {% for file in files %}
+        {% set revision = int(file['revision']) %}
             <tr>
                 <td><a href="{{ file['webpath'] }}">{{ file['name'] }}{% if file.get('kind') == 'dir' %}/{% end %}</a></td>
                 <td>{% raw file['date'].replace(' ', '&nbsp;') %}</td>
                 <td>{{ file['author'] }}</td>
-                <td>No message yet ...</td>
+                <td>{{ logs[revision-1]['message'] }}</td>
             </tr>
     {% end %}
         </tbody>

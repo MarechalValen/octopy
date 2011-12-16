@@ -28,6 +28,7 @@ class RepoHistoryHandler(tornado.web.RequestHandler):
     def get(self, path):
         reponame = path.split("/")[0]
         url = settings.repositories[reponame] + "/" + "/".join(path.split("/")[1:])
+        # TODO enable caching (again)
         #mc = memcache.Client(['127.0.0.1:11211'], debug=0)
         #logs = mc.get('%s_history' % reponame.encode('ISO-8859-1'))
         #if not logs:
@@ -49,12 +50,12 @@ class CreateRepoHandler(tornado.web.RequestHandler):
         try:
             svnmanage.create_repo(reponame, 'www-data')
             mc = memcache.Client(['127.0.0.1:11211'], debug=0)
-
             reload(settings)
+            url = settings.repositories[reponame]
             mc.set('repo_list_%s' % reponame,
-                svnbrowse.get_root_info(settings.repositories[reponame]), 
-                time=3600)
-
+                svnbrowse.get_root_info(url), time=36000)
+            mc.set('repo_log_%s' % reponame,
+                list(reversed(svnbrowse.list_history(url))), time=36000)
             self.redirect("/%s" % reponame)
         except Exception, e:
             self.get([str(e)])
@@ -111,6 +112,14 @@ class RepoHandler(tornado.web.RequestHandler):
         parts = filter(lambda s: s.strip(), parts)
         url = settings.repositories[name]
         files = svnbrowse.list_repository2(url, path)
+        
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        logs = mc.get('repo_log_%s' % str(name))
+        if logs is None:
+            logs = list(reversed(svnbrowse.list_history(url)))
+            mc.set('repo_log_%s' % str(name), logs, time=36000)
+        #pprint(logs, self)
+        #return 
         for f in files: 
             f['webpath'] = "/" + name + f['fullpath']
         if len(files) == 1 and files[0]['kind'] == 'file':
@@ -122,7 +131,7 @@ class RepoHandler(tornado.web.RequestHandler):
             source = svnbrowse.highlight_file(url + "/" + path)
             self.render("templates/repofile.html",
                 file=files[0], source=source, repo={"name": name},
-                breadcrumbs=parts[:-1], activecrumb=parts[-1],
+                breadcrumbs=parts[:-1], activecrumb=parts[-1], logs=logs,
                 svnurl=url + "/" + path, currentpath=name + "/" + path)
         else:
             readmes = [s for s in files if 'readme' in s['name'].lower()]
@@ -131,7 +140,7 @@ class RepoHandler(tornado.web.RequestHandler):
                 readme = svnbrowse.highlight_file(url + "/" + path + "/" + readmes[0]['name'])
             self.render("templates/repodir.html",
                 repo={"name": name}, files=[f for f in files if f['fullpath'] not in ("/" + path, '')],
-                breadcrumbs=parts[:-1], activecrumb=parts[-1],
+                breadcrumbs=parts[:-1], activecrumb=parts[-1], logs=logs,
                 svnurl=url + "/" + path, readme=readme, currentpath=name + "/" + path)
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
@@ -146,7 +155,7 @@ class MainHandler(tornado.web.RequestHandler):
             for name in missing:
                 url = settings.repositories[name]
                 repos_list[name] = svnbrowse.get_root_info(url)
-                mc.set('repo_list_%s' % name, repos_list[name], time=3600)
+                mc.set('repo_list_%s' % name, repos_list[name], time=36000)
         self.render("templates/repolist.html", repos=repos_list.values(), 
                 site_title=settings.SITE_TITLE)
 
@@ -159,6 +168,7 @@ class FlushCacheHandler(tornado.web.RequestHandler):
     def get(self, name):
         mc = memcache.Client(['127.0.0.1:11211'], debug=0)
         mc.delete('repo_list_%s' % str(name))
+        mc.delete('repo_log_%s' % str(name))
 
 appsettings = {
     "static_path": os.path.join(os.path.dirname(__file__), "static"),

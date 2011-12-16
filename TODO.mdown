@@ -11,18 +11,12 @@
 
 # Logging and History #
 
-* cache the log messages for each repo
-* pull the latest log message for each item when displaying the directory
-* pull the latest log message for the repo when displaying the repo list
+* make the history page paginated and only pull the logs necessary for each page
 
 # Diffing #
 
 * create a diff page with four text fields for the path and rev from and path and rev to
 * list the history of the current repo directory (like redmine) with links allowing us to submit to the diff page
-
-# Toolbar #
-
-* make the toolbar context sensitive. if we're viewing a repo, make the toolbar links *Trunk*, *Tags*, *Branches*, and *History*. 
 
 # Listing #
 
@@ -35,7 +29,7 @@
 
 # Checkout #
 
-* allow making of checkout
+* allow making a checkout
 
 # Other Nice Touches #
 
