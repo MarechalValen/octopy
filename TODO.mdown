@@ -1,0 +1,43 @@
+# Fix #
+
+* detect binary files and handle properly (like displaying common ones or allowing download)
+* detect file sizes and don't fetch large files
+
+# Simple Touches #
+
+* add markdown readme support
+* add textile readme support
+* create a refresh path to clear repo caches upon commit
+
+# Logging and History #
+
+* cache the log messages for each repo
+* pull the latest log message for each item when displaying the directory
+* pull the latest log message for the repo when displaying the repo list
+
+# Diffing #
+
+* create a diff page with four text fields for the path and rev from and path and rev to
+* list the history of the current repo directory (like redmine) with links allowing us to submit to the diff page
+
+# Toolbar #
+
+* make the toolbar context sensitive. if we're viewing a repo, make the toolbar links *Trunk*, *Tags*, *Branches*, and *History*. 
+
+# Listing #
+
+* add a "new" link to the *Tags* and *Branches*  page allowing us to easily add one or the other
+
+# Search #
+
+* figure out a way to search the repo (either periodically dump the repo to a tmp directory and grep that or clone the repo with git and grep that way)
+* put a search box in the toolbar. make it limit the search to the current repo, but put a link on the results page to expand the search to all repos. 
+
+# Checkout #
+
+* allow making of checkout
+
+# Other Nice Touches #
+
+* add a recent commits sidebar
+* add a recently visited sidebar
