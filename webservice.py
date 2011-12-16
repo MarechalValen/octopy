@@ -25,13 +25,15 @@ class OtherHandler(tornado.web.RequestHandler):
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class RepoHistoryHandler(tornado.web.RequestHandler):
-    def get(self, reponame):
-        url = settings.repositories[reponame]
-        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
-        logs = mc.get('%s_history' % reponame.encode('ISO-8859-1'))
-        if not logs:
-            logs = svnbrowse.list_history(url)
-            mc.set('%s_history' % reponame.encode('ISO-8859-1'), logs, time=300)
+    def get(self, path):
+        reponame = path.split("/")[0]
+        url = settings.repositories[reponame] + "/" + "/".join(path.split("/")[1:])
+        #mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        #logs = mc.get('%s_history' % reponame.encode('ISO-8859-1'))
+        #if not logs:
+        #    logs = svnbrowse.list_history(url)
+        #    mc.set('%s_history' % reponame.encode('ISO-8859-1'), logs, time=300)
+        logs = svnbrowse.list_history(url)
         self.render("templates/repohist.html", logs=logs, repo={"name": reponame},
             breadcrumbs=[reponame], activecrumb='log', svnurl=url)
 
@@ -121,7 +123,7 @@ class RepoHandler(tornado.web.RequestHandler):
             self.render("templates/repofile.html",
                 file=files[0], source=source, repo={"name": name},
                 breadcrumbs=parts[:-1], activecrumb=parts[-1],
-                svnurl=url + "/" + path)
+                svnurl=url + "/" + path, currentpath=name + "/" + path)
         else:
             readmes = [s for s in files if 'readme' in s['name'].lower()]
             readme = ""
@@ -130,7 +132,7 @@ class RepoHandler(tornado.web.RequestHandler):
             self.render("templates/repodir.html",
                 repo={"name": name}, files=[f for f in files if f['fullpath'] not in ("/" + path, '')],
                 breadcrumbs=parts[:-1], activecrumb=parts[-1],
-                svnurl=url + "/" + path, readme=readme)
+                svnurl=url + "/" + path, readme=readme, currentpath=name + "/" + path)
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class MainHandler(tornado.web.RequestHandler):
@@ -176,7 +178,7 @@ application = tornado.web.Application([
         dict(path=appsettings['static_path'] + '/twitter-bootstrap-1.3.0')),
     (r"/js/(.*)", tornado.web.StaticFileHandler,
         dict(path=appsettings['static_path'])),
-    (r"/history/([^/]*)/?", RepoHistoryHandler),
+    (r"/history/(.*)", RepoHistoryHandler),
     (r"/([^/]*)/?(.*)", RepoHandler),
 ], debug=True)
 
