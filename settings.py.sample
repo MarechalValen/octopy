@@ -1,4 +1,6 @@
 import os
 import glob
 
+SITE_TITLE = 'SVN'
+
 repositories = dict((os.path.basename(i), 'file://%s' % i) for i in glob.glob("/usr/local/svn/repositories/*"))

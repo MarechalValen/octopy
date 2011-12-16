@@ -40,7 +40,8 @@ class CreateRepoHandler(tornado.web.RequestHandler):
     def get(self, errors=None):
         errors = errors or []
         self.render("templates/newrepo.html", errors=errors,
-            breadcrumbs=[], activecrumb='newrepo', messages=[])
+            breadcrumbs=[], activecrumb='newrepo', messages=[],
+            site_title=settings.SITE_TITLE)
     def post(self):
         reponame = self.get_argument('reponame')
         try:
@@ -143,7 +144,8 @@ class MainHandler(tornado.web.RequestHandler):
             for name in missing:
                 url = settings.repositories[name]
                 mc.set('repo_list_%s' % name, svnbrowse.get_root_info(url), time=3600)
-        self.render("templates/repolist.html", repos=repos_list.values())
+        self.render("templates/repolist.html", repos=repos_list.values(), 
+                site_title=settings.SITE_TITLE)
 
 @auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
 class DumpSettingsHandler(tornado.web.RequestHandler):
