@@ -143,7 +143,8 @@ class MainHandler(tornado.web.RequestHandler):
             reload(settings)
             for name in missing:
                 url = settings.repositories[name]
-                mc.set('repo_list_%s' % name, svnbrowse.get_root_info(url), time=3600)
+                repos_list[name] = svnbrowse.get_root_info(url)
+                mc.set('repo_list_%s' % name, repos_list[name], time=3600)
         self.render("templates/repolist.html", repos=repos_list.values(), 
                 site_title=settings.SITE_TITLE)
 
@@ -152,6 +153,11 @@ class DumpSettingsHandler(tornado.web.RequestHandler):
     def get(self):
         pprint(settings.repositories, self)
 
+class FlushCacheHandler(tornado.web.RequestHandler):
+    def get(self, name):
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        mc.delete('repo_list_%s' % str(name))
+
 appsettings = {
     "static_path": os.path.join(os.path.dirname(__file__), "static"),
 }
@@ -159,6 +165,7 @@ appsettings = {
 application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/dump-settings", DumpSettingsHandler),
+    (r"/refresh/(.*)", FlushCacheHandler),
     (r"/newtag/(.*)", CreateTagHandler),
     (r"/newbranch/(.*)", CreateBranchHandler),
     (r"/newrepo", CreateRepoHandler),
