@@ -106,27 +106,28 @@ class RepoHandler(tornado.web.RequestHandler):
         parts = [name]
         parts.extend(path.strip("/").split("/"))
         parts = filter(lambda s: s.strip(), parts)
-        #pprint(parts, self)
         url = settings.repositories[name]
-        files = list(svnbrowse.list_repository(url, path))
+        files = svnbrowse.list_repository2(url, path)
+        for f in files: 
+            f['webpath'] = "/" + name + f['fullpath']
         if len(files) == 1 and files[0]['kind'] == 'file':
-            #pprint(files, stream=self)
-            if int(files[0]['size']) > 1048576:
-                source = "File too large to display"
-            else:
-                source = svnbrowse.highlight_file(url + "/" + path)
+            # TODO fetch file size
+            #if int(files[0]['size']) > 1048576:
+            #    source = "File too large to display"
+            #else:
+            #    source = svnbrowse.highlight_file(url + "/" + path)
+            source = svnbrowse.highlight_file(url + "/" + path)
             self.render("templates/repofile.html",
                 file=files[0], source=source, repo={"name": name},
                 breadcrumbs=parts[:-1], activecrumb=parts[-1],
                 svnurl=url + "/" + path)
         else:
-            #pprint(files, stream=self)
             readmes = [s for s in files if 'readme' in s['name'].lower()]
             readme = ""
             if len(readmes) > 0:
                 readme = svnbrowse.highlight_file(url + "/" + path + "/" + readmes[0]['name'])
             self.render("templates/repodir.html",
-                repo={"name": name}, files=files,
+                repo={"name": name}, files=[f for f in files if f['fullpath'] not in ("/" + path, '')],
                 breadcrumbs=parts[:-1], activecrumb=parts[-1],
                 svnurl=url + "/" + path, readme=readme)
 

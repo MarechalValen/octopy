@@ -1,4 +1,5 @@
 
+import re
 from datetime import datetime
 from os.path import basename, dirname
 from subprocess import call, check_call, CalledProcessError
@@ -40,6 +41,39 @@ class LogParser(object):
                     'action': path.attrib['action']})
             yield data
 
+class ListParser(object):
+    def __init__(self, logoutput):
+        self.log = logoutput
+    def __iter__(self):
+        tree = ElementTree()
+        tree.parse(self.log)
+        iterator = getattr(tree, 'iter', getattr(tree, 'getiterator'))
+        for entry in iterator('entry'):
+            root = entry.find('repository').find('root').text
+            data = { 'kind': entry.attrib['kind'],
+                'name': entry.attrib['path'], 
+                'fullpath': entry.find('url').text.replace(root, '') }
+            commit = entry.find('commit')
+            data['revision'] = commit.attrib['revision']
+            data['orig_date'] = commit.find('date').text[0:19]
+            data['date'] = datetime.strptime(data['orig_date'], 
+                    "%Y-%m-%dT%H:%M:%S").strftime(DEFAULT_DATE_FMT)            
+            try:
+                data['author'] = commit.find('author').text
+            except AttributeError:
+                data['author'] = ''
+            yield data
+        
+        #logex = re.compile('\s*(\d+)\s(\w+)\s*(\d+)?\s*(\w+\s\d+\s\d+:\d+)\s(.*)')
+        #for line in self.log:
+        #    rev, author, size, date, path = logex.match(line).groups()
+        #    data = { 'kind': 'dir' if path[-1] == '/' else 'file',
+        #        'size': size, 'name': '.' if path == './' else basename(path) , 
+        #        'revision': rev, 'author': author or '', 
+        #        'date': datetime.strptime(date, 
+        #            "%b %d %H:%M").strftime(DEFAULT_DATE_FMT),
+        #        'orig_date': date, 'webpath': ''}
+        #    yield data
 
 def list_repositories(repos):
     """Returns a list of all the available repositories as a label and path
@@ -93,7 +127,7 @@ def list_repository(repourl, path, rev=None, recursive=False):
         commit = entry.find('commit')
         webpath = "/" + name
         if path != "":
-           webpath += "/" + path
+            webpath += "/" + path
         webpath += "/" + entry.find('name').text
         data = { 'kind': entry.attrib['kind'],
             'name': entry.find('name').text,
@@ -109,6 +143,25 @@ def list_repository(repourl, path, rev=None, recursive=False):
             data['size'] = None
 
         yield data
+    
+    
+def list_repository2(repourl, path, rev=None, recursive=False):
+    """Returns a listing of the repository, every folder and file"""
+
+    name = basename(repourl.strip("/"))
+    url = repourl + "/" + path
+    #cmd = ['svn', 'list', '-v', url]
+    cmd = ['svn', 'info', '--xml', '--depth', 'immediates', url]
+    if rev:
+        cmd.extend(['-r', str(rev)])
+    if recursive:
+        cmd.extend(['-R'])
+
+    with TemporaryFile() as tmp:
+        call(cmd, stdout=tmp)
+        tmp.seek(0)
+        parser = ListParser(tmp)
+        return list(parser)
 
 def list_history(repourl):
     """returns the parsed history of the repository"""
