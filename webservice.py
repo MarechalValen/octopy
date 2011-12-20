@@ -2,29 +2,35 @@
 
 import argparse
 import os
+import random
+import string
 from pprint import pprint
 
-import auth
 import svnbrowse
 import svnmanage
 import tornado.ioloop
 import tornado.web
 import memcache
 
-def _temp_auth(*a, **kw): return True
-auth.ldapauth.auth_user_ldap = _temp_auth
-
 import settings
 
 parser = argparse.ArgumentParser(description="""Starts up a webserver on port 5000
     serving all the local svn repositories""")
 
-class OtherHandler(tornado.web.RequestHandler):
+class RequestHandler(tornado.web.RequestHandler):
+    def get_current_user(self):
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        try:
+            return mc.get(self.get_secure_cookie('octopy_session_id'))
+        except mc.MemcachedKeyNoneError:
+            return None
+
+class OtherHandler(RequestHandler):
     def get(self):
         self.write("")
 
-@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
-class RepoHistoryHandler(tornado.web.RequestHandler):
+class RepoHistoryHandler(RequestHandler):
+    @tornado.web.authenticated
     def get(self, path):
         reponame = path.split("/")[0]
         url = settings.repositories[reponame] + "/" + "/".join(path.split("/")[1:])
@@ -38,13 +44,14 @@ class RepoHistoryHandler(tornado.web.RequestHandler):
         self.render("templates/repohist.html", logs=logs, repo={"name": reponame},
             breadcrumbs=[reponame], activecrumb='log', svnurl=url)
 
-@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
-class CreateRepoHandler(tornado.web.RequestHandler):
+class CreateRepoHandler(RequestHandler):
+    @tornado.web.authenticated
     def get(self, errors=None):
         errors = errors or []
         self.render("templates/newrepo.html", errors=errors,
             breadcrumbs=[], activecrumb='newrepo', messages=[],
             site_title=settings.SITE_TITLE)
+    @tornado.web.authenticated
     def post(self):
         reponame = self.get_argument('reponame')
         try:
@@ -60,19 +67,20 @@ class CreateRepoHandler(tornado.web.RequestHandler):
         except Exception, e:
             self.get([str(e)])
 
-@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
-class CreateBranchHandler(tornado.web.RequestHandler):
+class CreateBranchHandler(RequestHandler):
+    @tornado.web.authenticated
     def get(self, reponame):
         self.write("not ready quite yet ... :)")
         #self.write("creating a new branch for %s ..." % reponame)
         
-@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
-class CreateTagHandler(tornado.web.RequestHandler):
+class CreateTagHandler(RequestHandler):
+    @tornado.web.authenticated
     def get(self, reponame):
         self.write("not ready quite yet ... :)")
         #url = repos[reponame]
         #self._render_page(reponame, [], svnbrowse.get_tags(url))
        
+    @tornado.web.authenticated
     def post(self, reponame):
         self.get(reponame)
         #url = repos[reponame]
@@ -104,8 +112,8 @@ class CreateTagHandler(tornado.web.RequestHandler):
             breadcrumbs=[], activecrumb='newtag %s' % reponame)
  
 
-@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
-class RepoHandler(tornado.web.RequestHandler):
+class RepoHandler(RequestHandler):
+    @tornado.web.authenticated
     def get(self, name, path=""):
         parts = [name]
         parts.extend(path.strip("/").split("/"))
@@ -118,8 +126,6 @@ class RepoHandler(tornado.web.RequestHandler):
         if logs is None:
             logs = list(reversed(svnbrowse.list_history(url)))
             mc.set('repo_log_%s' % str(name), logs, time=36000)
-        #pprint(logs, self)
-        #return 
         for f in files: 
             f['webpath'] = "/" + name + f['fullpath']
         if len(files) == 1 and files[0]['kind'] == 'file':
@@ -143,8 +149,8 @@ class RepoHandler(tornado.web.RequestHandler):
                 breadcrumbs=parts[:-1], activecrumb=parts[-1], logs=logs,
                 svnurl=url + "/" + path, readme=readme, currentpath=name + "/" + path)
 
-@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
-class MainHandler(tornado.web.RequestHandler):
+class MainHandler(RequestHandler):
+    @tornado.web.authenticated
     def get(self):
         mc = memcache.Client(['127.0.0.1:11211'], debug=0)
         names = settings.repositories.keys()
@@ -159,12 +165,34 @@ class MainHandler(tornado.web.RequestHandler):
         self.render("templates/repolist.html", repos=repos_list.values(), 
                 site_title=settings.SITE_TITLE)
 
-@auth.require_basic_auth("Authrealm", auth.ldapauth.auth_user_ldap)
-class DumpSettingsHandler(tornado.web.RequestHandler):
+class LoginHandler(RequestHandler):
+    def get(self):
+        self.render("templates/login.html", 
+            redirect_to=self.get_argument("next"), errors=[])
+    def post(self):
+        username = self.get_argument("username")
+        password = self.get_argument("password")
+        redirect_to = self.get_argument("redirect_to")
+        if not settings.auth(username, password):
+            return self.render("templates/login.html", redirect_to=redirect_to, 
+                errors=['Login failed - invalid credentials'])
+
+        sessid = ''.join(random.choice(string.letters) for i in xrange(32))
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        if mc.get(sessid) is not None:
+            return self.render("templates/login.html", redirect_to=redirect_to, 
+                errors=['Login failed - failed to generate unique key'])
+
+        mc.set(sessid, {'username': username}, time=32400)
+        self.set_secure_cookie('octopy_session_id', sessid, expires_days=1)
+        self.redirect(redirect_to)
+
+class DumpSettingsHandler(RequestHandler):
+    @tornado.web.authenticated
     def get(self):
         pprint(settings.repositories, self)
 
-class FlushCacheHandler(tornado.web.RequestHandler):
+class FlushCacheHandler(RequestHandler):
     def get(self, name):
         mc = memcache.Client(['127.0.0.1:11211'], debug=0)
         mc.delete('repo_list_%s' % str(name))
@@ -176,6 +204,7 @@ appsettings = {
 
 application = tornado.web.Application([
     (r"/", MainHandler),
+    (r"/login", LoginHandler),
     (r"/dump-settings", DumpSettingsHandler),
     (r"/refresh/(.*)", FlushCacheHandler),
     (r"/newtag/(.*)", CreateTagHandler),
@@ -190,7 +219,7 @@ application = tornado.web.Application([
         dict(path=appsettings['static_path'])),
     (r"/history/(.*)", RepoHistoryHandler),
     (r"/([^/]*)/?(.*)", RepoHandler),
-], debug=True)
+], debug=True, login_url="/login", cookie_secret=settings.SECURE_COOKIE_KEY)
 
 # with the `debug=True` flag we get autoreloading - whenever a module is changed
 # while the webserver is running, the whole thing is reloaded

@@ -1,6 +1,21 @@
+
 import os
 import glob
+import logging
 
+import auth
+
+SECURE_COOKIE_KEY = "my-random-secure-cookie-key"
 SITE_TITLE = 'SVN'
+
+logging.basicConfig(filename="/tmp/octopy.log", level=logging.DEBUG)
+
+auth.ldapauth.LDAP_URL = 'ldap://yourldapserver'
+auth.ldapauth.LDAP_SEARCH_BASE = 'ou=Users,dc=example,dc=com'
+auth.ldapauth.LDAP_GROUP_BASE = 'ou=Groups,dc=example,dc=com'
+auth.ldapauth.DEFAULT_GROUP = 'Svnusers'
+
+def _temp_auth(*a, **kw): return True
+auth.ldapauth.auth_user_ldap = _temp_auth
 
 repositories = dict((os.path.basename(i), 'file://%s' % i) for i in glob.glob("/usr/local/svn/repositories/*"))
