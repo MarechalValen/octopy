@@ -36,11 +36,12 @@ def create_tag(repourl, tagname, username):
         raise BadName("""'%s' is an invalid name. Try using just letters, numbers,
             dashes, underscores and periods.""" % tagname)
 
-    #try:
-    check_call(['svn', 'copy', '%s/trunk' % repourl, 
-            '%s/tags/%s' % (repourl, tagname), '-m', 
-            'Tagging the %s release' % tagname])
+    out = call(['svn', 'copy', '--username', username, '%s/trunk' % repourl, 
+            '%s/tags/%s' % (repourl, tagname), '-m', 'Tagging the %s release' % tagname])
+    if out is not 0:
+        tmp.seek(0)
+        msg = tmp.read()
+        logging.error(msg)
+        raise Error(msg)
     return True
-    #except CalledProcessError, e:
-        
     

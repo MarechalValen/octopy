@@ -6,6 +6,13 @@
 <li><a href="/{{ repo['name'] }}/trunk">Trunk</a></li>
 <li><a href="/{{ repo['name'] }}/branches">Branches</a></li>
 <li><a href="/{{ repo['name'] }}/tags">Tags</a></li>
+<li class="dropdown">
+    <a href="#" class="dropdown-toggle">New</a>
+    <ul class="dropdown-menu">
+        <li><a href="/newtag/{{ repo['name'] }}">New Tag</a></li>
+        <li><a href="#">Branch</a></li>
+    </ul>
+</li>
 <li class="active"><a href="/history/{{ repo['name'] }}">History</a></li>
 </ul>
 {% end %}

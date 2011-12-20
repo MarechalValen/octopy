@@ -76,24 +76,20 @@ class CreateBranchHandler(RequestHandler):
 class CreateTagHandler(RequestHandler):
     @tornado.web.authenticated
     def get(self, reponame):
-        self.write("not ready quite yet ... :)")
-        #url = repos[reponame]
-        #self._render_page(reponame, [], svnbrowse.get_tags(url))
+        url = settings.repositories[reponame]
+        self._render_page(reponame, [], 
+            svnbrowse.get_tags(url))
        
     @tornado.web.authenticated
     def post(self, reponame):
-        self.get(reponame)
-        #url = repos[reponame]
-        #errors = []
-        #tagname = self.get_argument('tagname')
-        #tags = svnbrowse.get_tags(url)
-        #try:
-        #    svnmanage.create_tag(url, tagname, 'pmanser')
-        #    self.redirect("/%s/tags" % reponame)
-        #except svnmanage.Error, e:
-        #    errors.append(str(e))
-
-        #self._render_page(reponame, errors, tags)
+        url = settings.repositories[reponame]
+        tagname = self.get_argument('tagname')
+        try:
+            svnmanage.create_tag(url, tagname, self.get_current_user()['username'])
+            self.redirect("/%s/tags" % reponame)
+        except svnmanage.Error, e:
+            self._render_page(reponame, [str(e)], 
+                svnbrowse.get_tags(url))
 
     def _render_page(self, reponame, errors, tags):
         tags = list(reversed(sorted(tags)))
@@ -108,7 +104,7 @@ class CreateTagHandler(RequestHandler):
             tags = []
 
         self.render("templates/newtag.html", errors=errors,
-            latest_tag=latest_tag, tags=tags,
+            latest_tag=latest_tag, tags=tags, repo={'name': reponame},
             breadcrumbs=[], activecrumb='newtag %s' % reponame)
  
 
@@ -215,6 +211,8 @@ application = tornado.web.Application([
         dict(path=appsettings['static_path'])),
     (r"/styles/bootstrap/(.*css)", tornado.web.StaticFileHandler,
         dict(path=appsettings['static_path'] + '/twitter-bootstrap-1.3.0')),
+    (r"/js/bootstrap/(.*)", tornado.web.StaticFileHandler,
+        dict(path=appsettings['static_path'] + '/twitter-bootstrap-1.3.0/js')),
     (r"/js/(.*)", tornado.web.StaticFileHandler,
         dict(path=appsettings['static_path'])),
     (r"/history/(.*)", RepoHistoryHandler),
