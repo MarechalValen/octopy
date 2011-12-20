@@ -70,9 +70,23 @@ class CreateRepoHandler(RequestHandler):
 class CreateBranchHandler(RequestHandler):
     @tornado.web.authenticated
     def get(self, reponame):
-        self.write("not ready quite yet ... :)")
-        #self.write("creating a new branch for %s ..." % reponame)
+        url = settings.repositories[reponame]
+        self.render("templates/newbranch.html", errors=[],
+            repo={'name': reponame}, breadcrumbs=[], 
+            activecrumb='newbranch %s' % reponame)
         
+    @tornado.web.authenticated
+    def post(self, reponame):
+        url = settings.repositories[reponame]
+        branchname = self.get_argument('branchname')
+        try:
+            svnmanage.create_branch(url, branchname, self.get_current_user()['username'])
+            self.redirect("/%s/branches" % reponame)
+        except svnmanage.Error, e:
+            self.render("templates/newbranch.html", errors=[str(e)],
+                repo={'name': reponame}, breadcrumbs=[], 
+                activecrumb='newbranch %s' % reponame)
+
 class CreateTagHandler(RequestHandler):
     @tornado.web.authenticated
     def get(self, reponame):

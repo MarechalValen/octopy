@@ -10,6 +10,9 @@ class Error(Exception):
 class TagExists(Error):
     pass
 
+class BranchExists(Error):
+    pass
+
 class BadName(Error):
     pass
 
@@ -25,7 +28,23 @@ def create_repo(name, username):
         return True
 
 def create_branch(repourl, branchname, username):
-    pass
+    limbs = svnbrowse.get_branches(repourl)
+    if branchname in limbs:
+        raise BranchExists("""'%s' is already a branch, please try using a 
+            different branch name""" % branchname)
+    elif re.sub('[\w\.-]', '', branchname) != '':
+        raise BadName("""'%s' is an invalid name. Try using just letters, numbers,
+            dashes, underscores and periods.""" % branchname)
+
+    out = call(['svn', 'copy', '--username', username, '%s/trunk' % repourl, 
+            '%s/branches/%s' % (repourl, branchname), '-m', 'Creating a new branch named %s' % branchname])
+    if out is not 0:
+        tmp.seek(0)
+        msg = tmp.read()
+        logging.error(msg)
+        raise Error(msg)
+    return True
+    
     
 def create_tag(repourl, tagname, username):
     tags = svnbrowse.get_tags(repourl)

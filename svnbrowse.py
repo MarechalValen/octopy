@@ -226,3 +226,13 @@ def get_tags(repourl):
     except CalledProcessError:
         raise NoTagDirectoryInRepo("The repository %s does not have a 'tags' directory" % repourl)
 
+def get_branches(repourl):
+    cmd = ['svn', 'list', '%s/branches' % repourl]
+    try:
+        with TemporaryFile() as tmp:
+            check_call(cmd, stdout=tmp)
+            tmp.seek(0)
+            return [i.strip().strip("/") for i in tmp.readlines()]
+    except CalledProcessError:
+        raise NoBranchDirectoryInRepo("The repository %s does not have a 'branches' directory" % repourl)
+
