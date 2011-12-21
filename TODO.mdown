@@ -35,3 +35,4 @@
 
 * add a recent commits sidebar
 * add a recently visited sidebar
+* feed http://sluggo.scrapping.cc/python/WebHelpers/modules/feedgenerator.html
