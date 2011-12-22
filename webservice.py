@@ -53,9 +53,9 @@ class CreateRepoHandler(RequestHandler):
             site_title=settings.SITE_TITLE)
     @tornado.web.authenticated
     def post(self):
-        reponame = self.get_argument('reponame')
+        reponame = str(self.get_argument('reponame'))
         try:
-            svnmanage.create_repo(reponame, 'www-data')
+            svnmanage.create_repo(reponame, str(self.get_current_user()['username']))
             mc = memcache.Client(['127.0.0.1:11211'], debug=0)
             reload(settings)
             url = settings.repositories[reponame]
@@ -80,7 +80,7 @@ class CreateBranchHandler(RequestHandler):
         url = settings.repositories[reponame]
         branchname = self.get_argument('branchname')
         try:
-            svnmanage.create_branch(url, branchname, self.get_current_user()['username'])
+            svnmanage.create_branch(url, branchname, str(self.get_current_user()['username']))
             self.redirect("/%s/branches" % reponame)
         except svnmanage.Error, e:
             self.render("templates/newbranch.html", errors=[str(e)],
