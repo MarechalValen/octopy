@@ -208,6 +208,16 @@ class FlushCacheHandler(RequestHandler):
         mc.delete('repo_list_%s' % str(name))
         mc.delete('repo_log_%s' % str(name))
 
+class MemStatsHandler(tornado.web.RequestHandler):
+    def get(self):
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        pprint(mc.get_stats(), self)
+
+class DumpSessionHandler(tornado.web.RequestHandler):
+    def get(self):
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+        pprint(mc.get(self.get_secure_cookie('octopy_session_id')), self)
+
 appsettings = {
     "static_path": os.path.join(os.path.dirname(__file__), "static"),
 }
@@ -216,6 +226,8 @@ application = tornado.web.Application([
     (r"/", MainHandler),
     (r"/login", LoginHandler),
     (r"/dump-settings", DumpSettingsHandler),
+    (r"/dump-session", DumpSessionHandler),
+    (r"/stats", MemStatsHandler),
     (r"/refresh/(.*)", FlushCacheHandler),
     (r"/newtag/(.*)", CreateTagHandler),
     (r"/newbranch/(.*)", CreateBranchHandler),
