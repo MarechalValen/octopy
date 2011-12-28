@@ -7,7 +7,7 @@ from tempfile import TemporaryFile
 from xml.etree.ElementTree import ElementTree
 
 from pygments import highlight
-from pygments.lexers import guess_lexer, get_lexer_for_filename, TextLexer
+from pygments.lexers import guess_lexer, get_lexer_for_filename, TextLexer, DiffLexer
 from pygments.formatters import HtmlFormatter
 from pygments.util import ClassNotFound
 
@@ -200,7 +200,17 @@ def list_changesets(repourl, revfrom, revto):
             'path': path.text}
         yield data
 
-    # and svn diff 
+def list_diff(repourl, from_path, from_rev, to_path, to_rev):
+
+    cmd = ['svn', 'diff',
+            '%s/%s@%s' % (repourl, from_path, from_rev),
+            '%s/%s@%s' % (repourl, to_path, to_rev) ]
+
+    print cmd
+    with TemporaryFile() as tmp:
+        check_call(cmd, stdout=tmp)
+        tmp.seek(0)
+        return tmp.read()
 
 def highlight_file(repourl):
     with TemporaryFile() as tmp:
@@ -215,6 +225,8 @@ def highlight_file(repourl):
             return highlight(tmp.read(), 
                 TextLexer(), HtmlFormatter(linenos=True)) 
     
+def highlight_diff(diff):
+    return highlight(diff, DiffLexer(), HtmlFormatter())
 
 def get_tags(repourl):
     cmd = ['svn', 'list', '%s/tags' % repourl]

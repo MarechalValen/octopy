@@ -40,7 +40,7 @@ class RepoHistoryHandler(RequestHandler):
         #if not logs:
         #    logs = svnbrowse.list_history(url)
         #    mc.set('%s_history' % reponame.encode('ISO-8859-1'), logs, time=300)
-        revision = self.get_argument('rev')
+        revision = self.get_argument('rev', None)
         if revision:
             logs = svnbrowse.list_history(url, revision)
         else:
@@ -163,6 +163,23 @@ class RepoHandler(RequestHandler):
                 breadcrumbs=parts[:-1], activecrumb=parts[-1], logs=logs,
                 svnurl=url + "/" + path, readme=readme, currentpath=name + "/" + path)
 
+class DiffHandler(RequestHandler):
+    @tornado.web.authenticated
+    def get(self, reponame):
+        from_path = self.get_argument('fpath', '')
+        from_rev = self.get_argument('frev')
+        to_path = self.get_argument('tpath', '')
+        to_rev = self.get_argument('trev')
+
+        url = settings.repositories[reponame]
+
+        diffoutput = svnbrowse.list_diff(url, from_path, from_rev, to_path, to_rev)
+        diff = svnbrowse.highlight_diff(diffoutput)
+                
+        self.render("templates/diff.html", repo={"name": reponame},
+            diff=diff, breadcrumbs=[reponame], activecrumb='diff', 
+            currentpath=reponame)
+
 class MainHandler(RequestHandler):
     @tornado.web.authenticated
     def get(self):
@@ -247,6 +264,7 @@ application = tornado.web.Application([
         dict(path=appsettings['static_path'])),
     (r"/history/(.*)", RepoHistoryHandler),
     (r"/changes/(.*)", RepoHistoryHandler),
+    (r"/diff/(.*)", DiffHandler),
     (r"/([^/]*)/?(.*)", RepoHandler),
 ], debug=True, login_url="/login", cookie_secret=settings.SECURE_COOKIE_KEY)
 
