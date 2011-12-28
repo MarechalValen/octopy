@@ -172,7 +172,7 @@ def list_repository2(repourl, path, rev=None, recursive=False):
 def list_history(repourl, revision=None):
     """returns the parsed history of the repository"""
     cmd = ['svn', 'log', '--xml', '-v', repourl]
-    if revision is not None:
+    if revision is not None and int(revision):
         cmd.extend(['-r', revision])
     with TemporaryFile() as tmp:
         check_call(cmd, stdout=tmp)

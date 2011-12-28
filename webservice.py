@@ -40,7 +40,11 @@ class RepoHistoryHandler(RequestHandler):
         #if not logs:
         #    logs = svnbrowse.list_history(url)
         #    mc.set('%s_history' % reponame.encode('ISO-8859-1'), logs, time=300)
-        logs = svnbrowse.list_history(url)
+        revision = self.get_argument('rev')
+        if revision:
+            logs = svnbrowse.list_history(url, revision)
+        else:
+            logs = svnbrowse.list_history(url)
         self.render("templates/repohist.html", logs=logs, repo={"name": reponame},
             breadcrumbs=[reponame], activecrumb='log', svnurl=url)
 
@@ -242,6 +246,7 @@ application = tornado.web.Application([
     (r"/js/(.*)", tornado.web.StaticFileHandler,
         dict(path=appsettings['static_path'])),
     (r"/history/(.*)", RepoHistoryHandler),
+    (r"/changes/(.*)", RepoHistoryHandler),
     (r"/([^/]*)/?(.*)", RepoHandler),
 ], debug=True, login_url="/login", cookie_secret=settings.SECURE_COOKIE_KEY)
 
