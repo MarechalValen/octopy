@@ -46,6 +46,8 @@
             {% for path in log['paths'] %}
                 {{ path['action'] }} {{ path['path'] }}<br />
             {% end %}
+            {% set prev_rev = int(log['revision']) - 1 %}
+            <a href="/diff/{{ repo['name'] }}?frev={{ prev_rev }}&trev={{ log['revision'] }}">View Diff</a>
             </td>
         </tr>
         <tr style="display: none"> <td colspan="4"> </td> </tr>
