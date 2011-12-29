@@ -25,7 +25,8 @@
 
     {% include "breadcrumbs.html" %}
 
-    {% set difftotrunk = currentpath in [repo['name'] + '/branches', repo['name'] + '/tags'] %}
+    {% set intags = currentpath == repo['name'] + '/tags' %}
+    {% set inbranches = currentpath == repo['name'] + '/branches' %}
     <table class="zebra-striped repo-dir">
         <thead>
             <tr>
@@ -33,7 +34,7 @@
                 <th>Last Changed At</th>
                 <th>Last Changed By</th>
                 <th>Last Change Message</th>
-                {% if difftotrunk %}
+                {% if intags or inbranches %}
                 <th>&nbsp;</th>
                 {% end %}
             </tr>
@@ -46,7 +47,11 @@
                 <td>{% raw file['date'].replace(' ', '&nbsp;') %}</td>
                 <td>{{ file['author'] }}</td>
                 <td>{{ logs[revision-1]['message'] }}</td>
-                {% if difftotrunk %}
+                {% if inbranches %}
+                <td>
+                    <a href="/diff/{{ repo['name'] }}?fpath=trunk&tpath={{ file['webpath'].replace(repo['name'], '').lstrip('/') }}">Diff to Trunk</a>
+                </td>
+                {% elif intags %}
                 <td>
                     <a href="/diff/{{ repo['name'] }}?fpath={{ file['webpath'].replace(repo['name'], '').lstrip('/') }}&tpath=trunk">Diff to Trunk</a>
                 </td>
