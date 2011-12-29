@@ -1,9 +1,9 @@
 
 import re
 from datetime import datetime
-from os.path import basename, dirname
+from os.path import basename, dirname, getsize
 from subprocess import call, check_call, CalledProcessError
-from tempfile import TemporaryFile
+from tempfile import TemporaryFile, NamedTemporaryFile
 from xml.etree.ElementTree import ElementTree
 
 from pygments import highlight
@@ -206,11 +206,12 @@ def list_diff(repourl, from_path, from_rev, to_path, to_rev):
             '%s/%s@%s' % (repourl, from_path, from_rev),
             '%s/%s@%s' % (repourl, to_path, to_rev) ]
 
-    print ' '.join(cmd)
-    with TemporaryFile() as tmp:
+    with NamedTemporaryFile() as tmp:
         check_call(cmd, stdout=tmp)
         tmp.seek(0)
-        return tmp.read()
+        if getsize(tmp.name) > 5242880L:
+            return tmp.read(5242880) + "\n\n... Diff too large to show, terminating ...\n"
+        return tmp.read(5242880)
 
 def highlight_file(repourl):
     with TemporaryFile() as tmp:
