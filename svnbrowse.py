@@ -206,7 +206,7 @@ def list_diff(repourl, from_path, from_rev, to_path, to_rev):
             '%s/%s@%s' % (repourl, from_path, from_rev),
             '%s/%s@%s' % (repourl, to_path, to_rev) ]
 
-    print cmd
+    print ' '.join(cmd)
     with TemporaryFile() as tmp:
         check_call(cmd, stdout=tmp)
         tmp.seek(0)

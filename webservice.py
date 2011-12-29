@@ -167,9 +167,9 @@ class DiffHandler(RequestHandler):
     @tornado.web.authenticated
     def get(self, reponame):
         from_path = self.get_argument('fpath', '')
-        from_rev = self.get_argument('frev')
-        to_path = self.get_argument('tpath', '')
-        to_rev = self.get_argument('trev')
+        from_rev = self.get_argument('frev', 'HEAD')
+        to_path = self.get_argument('tpath', from_path)
+        to_rev = self.get_argument('trev', 'HEAD')
 
         url = settings.repositories[reponame]
 
@@ -178,7 +178,8 @@ class DiffHandler(RequestHandler):
                 
         self.render("templates/diff.html", repo={"name": reponame},
             diff=diff, breadcrumbs=[reponame], activecrumb='diff', 
-            currentpath=reponame)
+            currentpath=reponame, from_path=from_path, from_rev=from_rev,
+            to_path=to_path, to_rev=to_rev, errors=[])
 
 class MainHandler(RequestHandler):
     @tornado.web.authenticated

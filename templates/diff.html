@@ -21,5 +21,27 @@
 
     {% include "breadcrumbs.html" %}
 
+<form method="get">
+
+    {% if errors %}
+        {% for error in errors %}
+        <div class="alert-message error">
+            <p>{{ error }}</p>
+        </div>
+        {% end %}
+    {% end %}
+
+    <div class="clearfix">
+        <div class="input"> 
+            <input class="span6" id="fpath" name="fpath" size="30" type="text" value="{{ from_path }}"> 
+            <input class="span2" id="frev" name="frev" size="5" type="text" value="{{ from_rev }}"> 
+            <input class="span6" id="tpath" name="tpath" size="30" type="text" value="{{ to_path }}"> 
+            <input class="span2" id="trev" name="trev" size="5" type="text" value="{{ to_rev }}"> 
+            <input type="submit" class="btn primary" value="Go">
+        </div>
+    </div>
+
+</form>
+
 {% raw diff %}
 {% end %}
