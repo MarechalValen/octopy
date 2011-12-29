@@ -7,7 +7,6 @@
 
 * add markdown readme support
 * add textile readme support
-* create a refresh path to clear repo caches upon commit
 
 # Logging and History #
 
@@ -15,12 +14,11 @@
 
 # Diffing #
 
-* create a diff page with four text fields for the path and rev from and path and rev to
-* list the history of the current repo directory (like redmine) with links allowing us to submit to the diff page
+* put a listing at the bottom of directories an files of recent commits and let them submit to the diff page (ala redmine)
 
 # Listing #
 
-* add a "new" link to the *Tags* and *Branches*  page allowing us to easily add one or the other
+* put a list of branches and tags in the toolbar dropdowns
 
 # Search #
 
